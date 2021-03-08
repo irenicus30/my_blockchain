@@ -12,6 +12,7 @@ int create_signature(unsigned char* hash)
 {
     int function_status = -1;
     EC_KEY *eckey = EC_KEY_new();
+    BN_CTX *ctx = BN_CTX_new();
     if (NULL == eckey)
     {
         std::cout << "Failed to create new EC Key\n";
@@ -52,6 +53,13 @@ int create_signature(unsigned char* hash)
                     keyStr.resize(priKeyLen);
                     BIO_read(outbio, (void*)&(keyStr.front()), priKeyLen);
                     std::cout << "ec priv key:\n" << keyStr << std::endl;
+                    
+                    std::cout << "ec priv key in hex:\n" << BN_bn2hex(EC_KEY_get0_private_key(eckey)) << std::endl;
+                    std::cout << "ec pub key in hex:\n" << EC_POINT_point2hex(ecgroup, EC_KEY_get0_public_key(eckey),
+                                                        EC_GROUP_get_point_conversion_form(ecgroup), ctx) << std::endl;
+
+                    
+
 
 
                     ECDSA_SIG *signature = ECDSA_do_sign(hash, SHA256_DIGEST_LENGTH, eckey);
@@ -84,6 +92,7 @@ int create_signature(unsigned char* hash)
             EC_GROUP_free(ecgroup);
         }
         EC_KEY_free(eckey);
+        BN_CTX_free(ctx);
     }
 
   return function_status;
