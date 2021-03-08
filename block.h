@@ -24,4 +24,6 @@ struct block_t {
     bool deserialize(std::vector<byte>);
 
     uint32_t get_size() const;
+
+    block_t *prev = nullptr;
 };
