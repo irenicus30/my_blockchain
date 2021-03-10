@@ -1,7 +1,7 @@
 #include <block.h>
 
 bool block_t::add_hash() {
-    byte_array_t v = serialize();
+    byte_vector_t v = serialize();
 
     SHA256_CTX context;
     if(!SHA256_Init(&context))
@@ -24,7 +24,7 @@ bool block_t::verify() {
     if(!SHA256_Init(&context))
         return false;
 
-    byte_array_t v = serialize();
+    byte_vector_t v = serialize();
 
     if(!SHA256_Update(&context, v.data(), size - SHA256_DIGEST_LENGTH))
         return false;
@@ -33,7 +33,7 @@ bool block_t::verify() {
     if(!SHA256_Final(md, &context))
         return false;
 
-    byte_array_t hash;
+    byte_vector_t hash;
     std::memcpy(hash.data(), md, SHA256_DIGEST_LENGTH);
 
     if(hash == this_block_hash)
@@ -42,8 +42,8 @@ bool block_t::verify() {
         return false;
 }
 
-byte_array_t block_t::serialize() const {
-    byte_array_t v;
+byte_vector_t block_t::serialize() const {
+    byte_vector_t v;
     v.resize(size);
 
     uint32_t *ptr = reinterpret_cast<uint32_t*>(&v[0]);
@@ -60,7 +60,7 @@ byte_array_t block_t::serialize() const {
     *ptr = transactions_size;
     byte_ptr = &v[4+4+4+SHA256_DIGEST_LENGTH+4];
     for(const transaction_t& t : transactions) {
-        byte_array_t t_v = t.serialize();
+        byte_vector_t t_v = t.serialize();
         std::memcpy(byte_ptr, t_v.data(), t_v.size());
         byte_ptr += t_v.size();
     }
@@ -93,7 +93,7 @@ bool block_t::deserialize(std::vector<byte> v) {
     while(cumulative_size < transactions_size) {
         transactions.resize(transactions.size()+1);
         uint16_t *transaction_size_ptr = reinterpret_cast<uint16_t*>(&v[4+4+4+SHA256_DIGEST_LENGTH+4+offset+cumulative_size]);
-        byte_array_t serialized_transaction(&v[offset+cumulative_size], &v[offset+cumulative_size+*transaction_size_ptr]);
+        byte_vector_t serialized_transaction(&v[offset+cumulative_size], &v[offset+cumulative_size+*transaction_size_ptr]);
         transactions[transactions.size()-1].deserialize(serialized_transaction);
         cumulative_size += transactions[transactions.size()-1].size();
     }

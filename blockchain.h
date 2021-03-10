@@ -9,4 +9,4 @@
 #include <vector>
 
 typedef unsigned char byte_t;
-typedef std::vector<byte> byte_array_t;
+typedef std::vector<byte> byte_vector_t;

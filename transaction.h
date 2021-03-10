@@ -9,21 +9,22 @@
 struct transaction_t {
     uint16_t size;
     uint16_t data_size;
-    std::string data;
+    byte_vector_t data;
     //signed up to here
 
-    uint16_t signature_size;
-    std::string signature;
-
     uint16_t private_key_size;
-    std::string private_key;
+    byte_vector_t private_key;
 
+    uint16_t signature_size;
+    byte_vector_t signature;
 
-    bool verify_data();
-    bool verify_signature();
+    bool add_signature(byte_vector_t key);
 
-    std::vector<byte> serialize() const;
-    bool deserialize(std::vector<byte>);
+    bool verify_data() const;
+    bool verify_signature() const;
+
+    byte_vector_t serialize() const;
+    bool deserialize(byte_vector_t);
 
     int16_t get_size() const;
 };
