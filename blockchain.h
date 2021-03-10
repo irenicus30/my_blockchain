@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/log/trivial.hpp>
+
 #include <openssl/sha.h>
 #include <openssl/ec.h>
 
