@@ -8,4 +8,5 @@
 #include <string>
 #include <vector>
 
-typedef unsigned char byte;
+typedef unsigned char byte_t;
+typedef std::vector<byte> byte_array_t;

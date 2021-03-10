@@ -46,13 +46,21 @@ int create_signature(unsigned char* hash)
                 }
                 else
                 {
-                    BIO* outbio = BIO_new(BIO_s_mem());
-                    PEM_write_bio_ECPrivateKey(outbio, eckey, NULL, NULL, 0, 0, NULL);
-                    std::string keyStr;
-                    int priKeyLen = BIO_pending(outbio);
-                    keyStr.resize(priKeyLen);
-                    BIO_read(outbio, (void*)&(keyStr.front()), priKeyLen);
-                    std::cout << "ec priv key:\n" << keyStr << std::endl;
+                    BIO* outbio_priv = BIO_new(BIO_s_mem());
+                    PEM_write_bio_ECPrivateKey(outbio_priv, eckey, NULL, NULL, 0, 0, NULL);
+                    std::string keyStr_priv;
+                    int priKeyLen = BIO_pending(outbio_priv);
+                    keyStr_priv.resize(priKeyLen);
+                    BIO_read(outbio_priv, (void*)&(keyStr_priv.front()), priKeyLen);
+                    std::cout << "ec priv key:\n" << keyStr_priv << std::endl;
+
+                    BIO* outbio_pub = BIO_new(BIO_s_mem());
+                    PEM_write_bio_EC_PUBKEY(outbio_pub, eckey);
+                    std::string keyStr_pub;
+                    int pubKeyLen = BIO_pending(outbio_pub);
+                    keyStr_pub.resize(pubKeyLen);
+                    BIO_read(outbio_pub, (void*)&(keyStr_pub.front()), pubKeyLen);                    
+                    std::cout << "ec pub key:\n" << keyStr_pub << std::endl;
                     
                     std::cout << "ec priv key in hex:\n" << BN_bn2hex(EC_KEY_get0_private_key(eckey)) << std::endl;
                     std::cout << "ec pub key in hex:\n" << EC_POINT_point2hex(ecgroup, EC_KEY_get0_public_key(eckey),
@@ -86,7 +94,8 @@ int create_signature(unsigned char* hash)
                             function_status = 1;
                         }
                     }
-                    BIO_free_all(outbio);
+                    BIO_free_all(outbio_priv);
+                    BIO_free_all(outbio_pub);
                 }
             }
             EC_GROUP_free(ecgroup);
