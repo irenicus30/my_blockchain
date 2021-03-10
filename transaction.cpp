@@ -1,4 +1,4 @@
-#include <transaction.h>
+#include "transaction.h"
 
 
 bool transaction_t::add_signature(byte_vector_t key) {
@@ -40,8 +40,8 @@ bool transaction_t::add_signature(byte_vector_t key) {
                 EC_KEY_set_private_key(eckey, private_bn);
 
                 signature.resize(ECDSA_size(eckey));
-                int len;
-                ECDSA_SIG *ecdsa_sig = ECDSA_sign(0, md, SHA256_DIGEST_LENGTH, signature.data(), &len, eckey);
+                unsigned int len;
+                int result = ECDSA_sign(0, md, SHA256_DIGEST_LENGTH, signature.data(), &len, eckey);
                 signature_size = static_cast<uint16_t>(len);
                 if(signature_size == 0) {
                     status = false;
@@ -59,7 +59,6 @@ bool transaction_t::add_signature(byte_vector_t key) {
 
     return true;
 }
-
 
 bool transaction_t::verify_data() const {
     return true;
@@ -141,27 +140,27 @@ byte_vector_t transaction_t::serialize() const {
 }
 
 bool transaction_t::deserialize(byte_vector_t v) {
-    byte *begin = &v[0];
+    byte_t *begin = &v[0];
     uint16_t *ptr = reinterpret_cast<uint16_t*>(begin);
     size = *ptr;
 
-    byte *data_begin = &v[2+2];
+    byte_t *data_begin = &v[2+2];
     ptr = reinterpret_cast<uint16_t*>(data_begin-2);
     data_size = *ptr;
-    char *char_ptr = reinterpret_cast<char*>(data_begin);
-    data.assign(char_ptr, data_size);
+    data.resize(data_size);
+    std::memcpy(data.data(), data_begin, data_size);
 
-    byte *signature_begin = &v[2+2+data.size()+2];
+    byte_t *signature_begin = &v[2+2+data.size()+2];
     ptr = reinterpret_cast<uint16_t*>(signature_begin-2);
     signature_size = *ptr;
-    char_ptr = reinterpret_cast<char*>(signature_begin);
-    signature.assign(char_ptr, signature_size);
+    signature.resize(signature_size);
+    std::memcpy(signature.data(), signature_begin, signature_size);
 
-    byte *private_key_begin = &v[2+2+data.size()+2+signature.size()+2];
+    byte_t *private_key_begin = &v[2+2+data.size()+2+signature.size()+2];
     ptr = reinterpret_cast<uint16_t*>(private_key_begin-2);
     private_key_size = *ptr;
-    char_ptr = reinterpret_cast<char*>(private_key_begin);
-    signature.assign(char_ptr, private_key_size);
+    private_key.resize(private_key_size);
+    std::memcpy(private_key.data(), private_key_begin, private_key_size);
 
     return true;
 }

@@ -4,7 +4,7 @@
 #include <openssl/ecdsa.h>
 #include <openssl/obj_mac.h>
 
-#include <blockchain.h>
+#include "blockchain.h"
 
 struct transaction_t {
     uint16_t size;

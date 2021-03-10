@@ -2,8 +2,8 @@
 
 #include <openssl/sha.h>
 
-#include <blockchain.h>
-#include <transaction.h>
+#include "blockchain.h"
+#include "transaction.h"
 
 struct block_t {
     uint32_t size;

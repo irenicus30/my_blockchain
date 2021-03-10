@@ -1,4 +1,5 @@
-#include <block.h>
+#include "block.h"
+
 
 bool block_t::add_hash() {
     byte_vector_t v = serialize();
@@ -19,7 +20,7 @@ bool block_t::add_hash() {
     return true;
 }
 
-bool block_t::verify() {
+bool block_t::verify() const {
     SHA256_CTX context;
     if(!SHA256_Init(&context))
         return false;
@@ -71,7 +72,7 @@ byte_vector_t block_t::serialize() const {
     return v;
 }
 
-bool block_t::deserialize(std::vector<byte> v) {
+bool block_t::deserialize(byte_vector_t v) {
     uint32_t *ptr = reinterpret_cast<uint32_t*>(&v[0]);
     size = *ptr;
 
@@ -81,7 +82,7 @@ bool block_t::deserialize(std::vector<byte> v) {
     ptr = reinterpret_cast<uint32_t*>(&v[4+4]);
     this_block_number = *ptr;
 
-    byte_t *byte_ptr = (&v[4+4+4];
+    byte_t *byte_ptr = &v[4+4+4];
     previous_block_hash.resize(SHA256_DIGEST_LENGTH);
     std::memcpy(previous_block_hash.data(), byte_ptr, SHA256_DIGEST_LENGTH);
 
@@ -95,7 +96,7 @@ bool block_t::deserialize(std::vector<byte> v) {
         uint16_t *transaction_size_ptr = reinterpret_cast<uint16_t*>(&v[4+4+4+SHA256_DIGEST_LENGTH+4+offset+cumulative_size]);
         byte_vector_t serialized_transaction(&v[offset+cumulative_size], &v[offset+cumulative_size+*transaction_size_ptr]);
         transactions[transactions.size()-1].deserialize(serialized_transaction);
-        cumulative_size += transactions[transactions.size()-1].size();
+        cumulative_size += transactions[transactions.size()-1].size;
     }
     
     byte_ptr = &v[4+4+4+SHA256_DIGEST_LENGTH+4+transactions_size];
