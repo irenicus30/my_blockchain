@@ -1,7 +1,5 @@
 #pragma once
 
-#include <openssl/sha.h>
-
 #include "blockchain.h"
 #include "transaction.h"
 

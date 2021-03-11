@@ -1,8 +1,16 @@
 #pragma once
 
-#include <blockchain.h>
-#include <block.h>
+#include <map>
+#include <unordered_set>
 
+#include "blockchain.h"
+#include "block.h"
+
+struct byte_vector_pointer_comparator {
+    bool operator()(const byte_vector_t* a, const byte_vector_t* b) const {
+        return *a < *b;
+    }
+};
 
 struct chain_t {
     chain_t& get_instance() {
@@ -11,9 +19,11 @@ struct chain_t {
     }
 
     
-    std::vector<std::vector<block_t*>> blocks;
+    std::map<byte_vector_t*, block_t*, byte_vector_pointer_comparator> blocks;
 
-    bool  add_block(block_t* block);
+    std::unordered_set<block_t*> heads;
+
+    bool add_block(block_t* block);
 
     private:
         chain_t() {};

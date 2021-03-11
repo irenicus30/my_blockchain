@@ -1,21 +1,21 @@
-#include <chain.h>
+#include "chain.h"
 
 bool chain_t::add_block(block_t* block) {
-    uint32_t number = block->this_block_number;
-
-    if(number > blocks.size())
-        return false;
     
-    block_t* previous = nullptr;
-    for(block_t* p : blocks[number-1]) {
-        if(p->this_block_hash == block->previous_block_hash)
-            previous = p;
+    auto it_this = blocks.find(&block->this_block_hash);
+    if(it_this != blocks.end()) {
+        BOOST_LOG_TRIVIAL(info) << "this block with hash " << to_string(block->this_block_hash) << " already exists in blockchain";
+        return false;
     }
-    if(previous == nullptr)
+
+    auto it_prev = blocks.find(&block->previous_block_hash);
+    if(it_prev == blocks.end()) {
+        BOOST_LOG_TRIVIAL(info) << "previous block with hash " << to_string(block->previous_block_hash) << " does not exist in blockchain";
         return false;
+    }
 
-    blocks[number].push_back(block);
-    
+    auto result = blocks.insert(std::pair<byte_vector_t*, block_t*>(&block->this_block_hash, block));
 
 
+    return result.second;
 }

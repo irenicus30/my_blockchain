@@ -12,7 +12,7 @@ find_package(OpenSSL REQUIRED)
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED )
 include_directories( ${Boost_INCLUDE_DIR} )
 
-set(SOURCE_FILES main.cpp loader.cpp block.cpp transaction.cpp)
+set(SOURCE_FILES main.cpp loader.cpp block.cpp transaction.cpp chain.cpp blockchain.cpp)
 
 # add the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

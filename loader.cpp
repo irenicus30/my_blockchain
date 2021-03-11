@@ -26,6 +26,30 @@ loader_t::loader_t(std::string config_file_name /* = "" */) {
 
 
 bool loader_t::store_line(std::string key, std::string value) {
+    config_entry entry = resolve_options(key);
+    switch(entry) {
+        case config_entry::p2p_address:
+            p2p_address = value;
+            break;
+        case config_entry::seed_address:
+            seed_address.push_back(value);
+            break;
+        case config_entry::api_address:
+            api_address = value;
+            break;
+        default:
+            break;
+    }
 
     return true;
+}
+
+config_entry loader_t::resolve_options(std::string s) {
+    if(s == "p2p_address")
+        return config_entry::p2p_address;
+    if(s == "seed_address")
+        return config_entry::seed_address;
+    if(s == "api_address")
+        return config_entry::api_address;
+    return config_entry::not_an_option;
 }
