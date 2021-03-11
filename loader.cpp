@@ -4,7 +4,7 @@
 #include <fstream>
 
 
-loader_t::loader_t(std::string config_file_name /* = "" */) {
+loader_t::loader_t(std::string config_file_name/* = "" */) {
     if(!config_file_name.empty()) {
         std::ifstream is_file(config_file_name, std::ifstream::in);
 
@@ -31,11 +31,20 @@ bool loader_t::store_line(std::string key, std::string value) {
         case config_entry::p2p_address:
             p2p_address = value;
             break;
+        case config_entry::p2p_port:
+            p2p_port = value;
+            break;
         case config_entry::seed_address:
             seed_address.push_back(value);
             break;
+        case config_entry::seed_port:
+            seed_port.push_back(value);
+            break;
         case config_entry::api_address:
             api_address = value;
+            break;
+        case config_entry::api_port:
+            api_port = value;
             break;
         default:
             break;
@@ -47,9 +56,15 @@ bool loader_t::store_line(std::string key, std::string value) {
 config_entry loader_t::resolve_options(std::string s) {
     if(s == "p2p_address")
         return config_entry::p2p_address;
+    if(s == "p2p_port")
+        return config_entry::p2p_port;
     if(s == "seed_address")
         return config_entry::seed_address;
+    if(s == "seed_port")
+        return config_entry::seed_port;
     if(s == "api_address")
         return config_entry::api_address;
+    if(s == "api_port")
+        return config_entry::api_port;
     return config_entry::not_an_option;
 }

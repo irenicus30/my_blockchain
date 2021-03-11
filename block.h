@@ -3,6 +3,9 @@
 #include "blockchain.h"
 #include "transaction.h"
 
+class block_t;
+typedef std::shared_ptr<block_t> block_ptr;
+
 struct block_t {
     uint32_t size;
     uint32_t nounce;
@@ -14,7 +17,7 @@ struct block_t {
 
     byte_vector_t this_block_hash;
 
-    block_t *prev = nullptr;
+    block_ptr prev = nullptr;
 
     bool add_hash();
 

@@ -1,13 +1,22 @@
+
+
+#include <boost/program_options.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/signal_set.hpp>
+
 #include <iostream>
 #include <iomanip>
 #include <exception>
-
-#include <boost/program_options.hpp>
+#include <thread>
+#include <functional>
 
 #include "blockchain.h"
 #include "loader.h"
+#include "chain.h"
 
 namespace po = boost::program_options;
+using boost::asio::ip::tcp;
 
 int main(int argc, char* argv[]) {
     try {
@@ -36,6 +45,19 @@ int main(int argc, char* argv[]) {
         BOOST_LOG_TRIVIAL(info) << config_file_name;
 
         loader_t loader(config_file_name);
+        
+        boost::asio::io_context io_context(1);
+        tcp::endpoint endpoint(tcp::v4(), std::atoi(loader.p2p_port.c_str()));
+        peer_ptr ptr = std::make_shared<peer_t>(io_context, endpoint);
+        boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
+        signals.async_wait([&](auto, auto){ io_context.stop(); });
+
+        chain_t& instance = chain_t::get_instance();
+        auto fun = std::bind(&chain_t::run, &instance, loader, ptr);
+        std::thread t(fun);
+        t.detach();
+
+        io_context.run();
     }
     catch(std::exception& e) {
         BOOST_LOG_TRIVIAL(error) <<  e.what();

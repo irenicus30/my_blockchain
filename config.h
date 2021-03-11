@@ -1,0 +1,1 @@
+constexpr int MAX_FORK_DIFFERENCE = 20;
