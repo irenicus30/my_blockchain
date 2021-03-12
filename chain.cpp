@@ -55,10 +55,10 @@ void chain_t::run(loader_t& loader, peer_ptr ptr) {
 
         while(true) {
             std::unique_lock<std::mutex> lock(deque_mutex);
-            if(input_deque.empty())
+            if(input_messages.empty())
                 break;
-            message_ptr message = input_deque.front();
-            input_deque.pop_front();
+            message_ptr message = input_messages.front();
+            input_messages.pop_front();
             lock.unlock();
             block_ptr block = std::make_shared<block_t>();
             block->deserialize(message->buffer);

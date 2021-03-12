@@ -41,7 +41,7 @@ struct chain_t {
         int broadcast_block(block_ptr block);
 
         bool mine(std::chrono::milliseconds millis);
-        
+
         std::deque<message_ptr> input_messages;
         std::mutex deque_mutex;
 

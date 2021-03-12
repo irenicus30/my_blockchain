@@ -11,4 +11,4 @@ class message_t {
         byte_vector_t buffer;
 };
 
-typedef message_ptr = sed::shared_ptr<message_t>;
+typedef std::shared_ptr<message_t> message_ptr;
