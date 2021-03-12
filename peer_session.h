@@ -14,14 +14,17 @@ class peer_session_t : public std::enable_shared_from_this<peer_session_t> {
     public:
         peer_session_t(tcp::socket socket, peer_ptr ptr)
             : socket_(std::move(socket)), peer(ptr) {}
+        peer_session_t(boost::asio::io_context& io_context, peer_ptr ptr)
+            : socket_(io_context), peer(ptr) {}
 
         void start();
+        void do_connect(const tcp::resolver::results_type& endpoints);
         void send(message_ptr message);
     
     private:    
         tcp::socket socket_;
-        void do_read();
-        void do_write();
+        void do_read_header();
+        void do_read_body(message_ptr message);
 
         peer_ptr peer;
 };

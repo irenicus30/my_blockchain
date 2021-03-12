@@ -15,9 +15,26 @@ bool block_t::add_hash() {
     if(!SHA256_Final(md, &context))
         return false;
 
-    this_block_hash.assign(md, md + SHA256_DIGEST_LENGTH);
+    this_block_hash.resize(SHA256_DIGEST_LENGTH);
+    std::memcpy(this_block_hash.data(), md, SHA256_DIGEST_LENGTH);
 
     return true;
+}
+
+bool block_t::is_enough_zeros_in_hash(int zeros) {
+    if(this_block_hash.size() != SHA256_DIGEST_LENGTH)
+        return false;
+    int count = 0;
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        if(this_block_hash[i] == 0)
+            count++;
+        else
+            break;
+        if(count == zeros)
+            break;
+    }
+    return (count == zeros);
 }
 
 bool block_t::verify() const {
@@ -49,24 +66,24 @@ byte_vector_t block_t::serialize() const {
 
     uint32_t *ptr = reinterpret_cast<uint32_t*>(&v[0]);
     *ptr = size;
-    ptr = reinterpret_cast<uint32_t*>(&v[4]);
-    *ptr = nounce;
-    ptr = reinterpret_cast<uint32_t*>(&v[4+4]);
+    uint64_t *ptr64 = reinterpret_cast<uint64_t*>(&v[4]);
+    *ptr64 = nounce;
+    ptr = reinterpret_cast<uint32_t*>(&v[4+8]);
     *ptr = this_block_number;
 
-    byte_t *byte_ptr = &v[4+4+4];
+    byte_t *byte_ptr = &v[4+8+4];
     std::memcpy(byte_ptr, previous_block_hash.data(), previous_block_hash.size());
     
-    ptr = reinterpret_cast<uint32_t*>(&v[4+4+4+SHA256_DIGEST_LENGTH]);
+    ptr = reinterpret_cast<uint32_t*>(&v[4+8+4+SHA256_DIGEST_LENGTH]);
     *ptr = transactions_size;
-    byte_ptr = &v[4+4+4+SHA256_DIGEST_LENGTH+4];
+    byte_ptr = &v[4+8+4+SHA256_DIGEST_LENGTH+4];
     for(const transaction_t& t : transactions) {
         byte_vector_t t_v = t.serialize();
         std::memcpy(byte_ptr, t_v.data(), t_v.size());
         byte_ptr += t_v.size();
     }
 
-    byte_ptr = &v[4+4+4+SHA256_DIGEST_LENGTH+4+transactions_size];
+    byte_ptr = &v[4+8+4+SHA256_DIGEST_LENGTH+4+transactions_size];
     std::memcpy(byte_ptr, this_block_hash.data(), this_block_hash.size());
 
     return v;
@@ -76,30 +93,30 @@ bool block_t::deserialize(byte_vector_t v) {
     uint32_t *ptr = reinterpret_cast<uint32_t*>(&v[0]);
     size = *ptr;
 
-    ptr = reinterpret_cast<uint32_t*>(&v[4]);
-    nounce = *ptr;
+    uint64_t *ptr64 = reinterpret_cast<uint64_t*>(&v[4]);
+    nounce = *ptr64;
 
-    ptr = reinterpret_cast<uint32_t*>(&v[4+4]);
+    ptr = reinterpret_cast<uint32_t*>(&v[4+8]);
     this_block_number = *ptr;
 
-    byte_t *byte_ptr = &v[4+4+4];
+    byte_t *byte_ptr = &v[4+8+4];
     previous_block_hash.resize(SHA256_DIGEST_LENGTH);
     std::memcpy(previous_block_hash.data(), byte_ptr, SHA256_DIGEST_LENGTH);
 
-    ptr = reinterpret_cast<uint32_t*>(&v[4+4+4+SHA256_DIGEST_LENGTH]);
+    ptr = reinterpret_cast<uint32_t*>(&v[4+8+4+SHA256_DIGEST_LENGTH]);
     transactions_size = *ptr;
 
-    int offset = 4+4+4+SHA256_DIGEST_LENGTH+4;
+    int offset = 4+8+4+SHA256_DIGEST_LENGTH+4;
     int cumulative_size = 0;
     while(cumulative_size < transactions_size) {
         transactions.resize(transactions.size()+1);
-        uint16_t *transaction_size_ptr = reinterpret_cast<uint16_t*>(&v[4+4+4+SHA256_DIGEST_LENGTH+4+offset+cumulative_size]);
+        uint16_t *transaction_size_ptr = reinterpret_cast<uint16_t*>(&v[4+8+4+SHA256_DIGEST_LENGTH+4+offset+cumulative_size]);
         byte_vector_t serialized_transaction(&v[offset+cumulative_size], &v[offset+cumulative_size+*transaction_size_ptr]);
         transactions[transactions.size()-1].deserialize(serialized_transaction);
         cumulative_size += transactions[transactions.size()-1].size;
     }
     
-    byte_ptr = &v[4+4+4+SHA256_DIGEST_LENGTH+4+transactions_size];
+    byte_ptr = &v[4+8+4+SHA256_DIGEST_LENGTH+4+transactions_size];
     this_block_hash.resize(SHA256_DIGEST_LENGTH);
     std::memcpy(this_block_hash.data(), byte_ptr, SHA256_DIGEST_LENGTH);
 

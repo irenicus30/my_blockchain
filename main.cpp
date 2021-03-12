@@ -42,13 +42,11 @@ int main(int argc, char* argv[]) {
             config_file_name = vm["config"].as<std::string>();
         }
 
-        BOOST_LOG_TRIVIAL(info) << config_file_name;
-
         loader_t loader(config_file_name);
         
         boost::asio::io_context io_context(1);
         tcp::endpoint endpoint(tcp::v4(), std::atoi(loader.p2p_port.c_str()));
-        peer_ptr ptr = std::make_shared<peer_t>(io_context, endpoint);
+        peer_ptr ptr = std::make_shared<peer_t>(io_context, endpoint, loader);
         boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
         signals.async_wait([&](auto, auto){ io_context.stop(); });
 

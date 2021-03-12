@@ -2,6 +2,9 @@
 
 #include "blockchain.h"
 
+#include <iostream>
+#include <algorithm>
+
 
 enum class config_entry {
     p2p_address,
@@ -17,7 +20,7 @@ class loader_t {
 
     public:
         loader_t(std::string config_file_name = "");
-    
+
         std::string p2p_address;
         std::string p2p_port;
         std::vector<std::string> seed_address;
@@ -29,4 +32,6 @@ class loader_t {
         bool store_line(std::string key, std::string value);
 
         config_entry resolve_options(std::string);
+
+        friend std::ostream& operator<<(std::ostream&, loader_t&);
 };

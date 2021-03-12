@@ -5,6 +5,7 @@
 
 
 loader_t::loader_t(std::string config_file_name/* = "" */) {
+    BOOST_LOG_TRIVIAL(error) <<  "loading config from file " << config_file_name;
     if(!config_file_name.empty()) {
         std::ifstream is_file(config_file_name, std::ifstream::in);
 
@@ -22,6 +23,7 @@ loader_t::loader_t(std::string config_file_name/* = "" */) {
             }
         }
     }
+    BOOST_LOG_TRIVIAL(error) <<  *this;
 }
 
 
@@ -67,4 +69,23 @@ config_entry loader_t::resolve_options(std::string s) {
     if(s == "api_port")
         return config_entry::api_port;
     return config_entry::not_an_option;
+}
+
+
+std::ostream& operator<<(std::ostream& out, loader_t& loader) {
+    out << "CONFIG\n";
+    out << "\tp2p_address " << loader.p2p_address << "\n";
+    out << "\tp2p_port " << loader.p2p_port << "\n";
+
+    int seed_count = std::min(loader.seed_address.size(), loader.seed_port.size());
+    for(int i = 0; i < seed_count; i++)
+    {
+        out << "\tseed_address " << loader.seed_address[i] << "\n";
+        out << "\tseed_port " << loader.seed_port[i] << "\n";
+    }
+
+    out << "\tapi_address " << loader.api_address << "\n";
+    out << "\tapi_port " << loader.api_port << "\n";
+
+    return out;
 }

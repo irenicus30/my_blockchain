@@ -51,26 +51,69 @@ int chain_t::broadcast_block(block_ptr block) {
 void chain_t::run(loader_t& loader, peer_ptr ptr) {
     peer = ptr;
 
+    // main loop
     while(true) {
 
         while(true) {
-            std::unique_lock<std::mutex> lock(deque_mutex);
-            if(input_messages.empty())
+            std::unique_lock<std::mutex> lock(peer->input_message_mutex);
+            if(peer->input_messages.empty())
+            {
                 break;
-            message_ptr message = input_messages.front();
-            input_messages.pop_front();
+            }
+            message_ptr message = peer->input_messages.front();
+            peer->input_messages.pop_front();
             lock.unlock();
             block_ptr block = std::make_shared<block_t>();
             block->deserialize(message->buffer);
             add_block(block);
         }
         using namespace std::literals::chrono_literals;
-        mine(100ms);
-
+        block_ptr block = mine(100ms);
+        if(block)
+        {
+            add_block(block);
+        }
     }
 
 }
 
-bool chain_t::mine(std::chrono::milliseconds millis) {
-    return true;
+block_ptr chain_t::mine(std::chrono::milliseconds millis) {    
+    const std::chrono::time_point<std::chrono::system_clock> now =
+        std::chrono::system_clock::now();
+    block_ptr block = std::make_shared<block_t>();
+
+    block->size = 4+8+4+SHA256_DIGEST_LENGTH+4+SHA256_DIGEST_LENGTH;
+    
+    if(head==nullptr)
+    {
+        block->this_block_number = 1;
+        block->previous_block_hash = byte_vector_t(SHA256_DIGEST_LENGTH, 0);
+    }
+    else
+    {
+        block->this_block_number = head->this_block_number + 1;
+        block->previous_block_hash = head->this_block_hash;
+    }
+    //TODO: add transactions here
+    block->transactions_size = 0;
+
+    block->prev = head;
+
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<unsigned int> distrib(0, std::numeric_limits<unsigned int>::max());
+    uint64_t i = distrib(gen);
+    i <<= 32;
+    i += distrib(gen);
+    while(now + millis < std::chrono::system_clock::now())
+    {
+        block->nounce = i;
+        block->add_hash();
+        //difficulty one per milion
+        if(block->is_enough_zeros_in_hash(6))
+            return block;
+        i++;
+    }
+
+    return nullptr;
 }
