@@ -27,8 +27,9 @@ void peer_session_t::do_read_header()
     input_message_ptr message = std::make_shared<input_message_t>();
     message->buffer.resize(input_message_t::header_length + input_message_t::max_body_length);
     auto self(shared_from_this());
+    auto boost_buffer = boost::asio::buffer(message->buffer.data(), input_message_t::header_length);
     boost::asio::async_read(socket,
-        boost::asio::buffer(message->buffer.data(), input_message_t::header_length),
+        boost_buffer,
         [message = std::move(message), this, self](boost::system::error_code ec, std::size_t /*length*/) mutable
         {
             if (!ec)
@@ -54,8 +55,9 @@ void peer_session_t::do_read_header()
 void peer_session_t::do_read_body(input_message_ptr&& message)
 {
     auto self(shared_from_this());
+    auto boost_buffer = boost::asio::buffer(message->buffer.data() + input_message_t::header_length, message->body_length);
     boost::asio::async_read(socket,
-        boost::asio::buffer(message->buffer.data() + input_message_t::header_length, message->body_length),
+        boost_buffer,
         [message = std::move(message), this, self](boost::system::error_code ec, std::size_t /*length*/) mutable
         {
             if (!ec)
@@ -77,10 +79,9 @@ void peer_session_t::do_read_body(input_message_ptr&& message)
 void peer_session_t::send(output_message_ptr&& message)
 {
     auto self(shared_from_this());
-    auto buffer = message->buffer.data();
-    auto size = message->buffer.size();
+    auto boost_buffer = boost::asio::buffer(message->buffer.data(), message->buffer.size());
     boost::asio::async_write(socket,
-        boost::asio::buffer(buffer, size),
+        boost_buffer,
         [message = std::move(message), this, self] (const boost::system::error_code& ec, size_t n) mutable
         {
         boost::system::error_code ec2;
