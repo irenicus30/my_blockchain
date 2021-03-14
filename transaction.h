@@ -1,29 +1,31 @@
 #pragma once
 
-#include <openssl/ecdsa.h>
-#include <openssl/obj_mac.h>
-
 #include "blockchain.h"
+#include "ecdsa.h"
+#include "hash.h"
 
-struct transaction_t {
-    uint16_t size;
+struct transaction_t
+{
     uint16_t data_size;
     byte_vector_t data;
     //signed up to here
 
-    uint16_t private_key_size;
-    byte_vector_t private_key;
+    uint16_t public_key_size;
+    byte_vector_t public_key;
 
     uint16_t signature_size;
     byte_vector_t signature;
+    //serialized up here with vectors as byte arrays
 
-    bool add_signature(byte_vector_t key);
+    hash_t transaction_hash;
 
-    bool verify_data() const;
-    bool verify_signature() const;
+    // add only in wallet
+    bool add_signature(byte_vector_t& key);
+    bool verify() const;
 
     byte_vector_t serialize() const;
-    bool deserialize(byte_vector_t);
+    bool deserialize(byte_ptr);
 
-    int16_t get_size() const;
+    bool verify_data() const;
+    uint16_t get_size() const;
 };

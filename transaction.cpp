@@ -1,166 +1,106 @@
 #include "transaction.h"
 
 
-bool transaction_t::add_signature(byte_vector_t key) {
-    private_key_size = key.size();
-    private_key = key;
+bool transaction_t::add_signature(byte_vector_t& private_key, byte_vector_t& public_key)
+{
+    public_key_size = public_key.size();
+    this->public_key = public_key;
 
-    SHA256_CTX context;
-    if(!SHA256_Init(&context))
-        return false;
+    byte_vector_t buffer(sizeof(uint16_t) + data_size);
+    byte_ptr ptr = buffer.data();
+    uint16_t* data_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    *data_size_ptr = data_size;
+    ptr += sizeof(uint16_t);
+    std::memcpy(ptr, data.data(), data_size);
+    ptr += data_size;
 
-    if(!SHA256_Update(&context, reinterpret_cast<byte_t*>(&size), 2))
-        return false;
-    if(!SHA256_Update(&context, reinterpret_cast<byte_t*>(&data_size), 2))
-        return false;
-    if(!SHA256_Update(&context, data.data(), data_size))
-        return false;
+    signature = get_signature(buffer.data(), buffer.size(), private_key);
 
-    byte_t md[SHA256_DIGEST_LENGTH];
-    if(!SHA256_Final(md, &context))
+    signature_size = signature.size();
+    return (signature_size != 0);
+}
+
+bool transaction_t::verify() const
+{
+    if(!verify_data())
+    {
         return false;
-
-    bool status = true;
-    
-    EC_KEY *eckey = EC_KEY_new();
-    if (eckey == nullptr) {
-        status = false;
-    } else {
-        EC_GROUP *ecgroup = EC_GROUP_new_by_curve_name(NID_secp256k1);
-        if (ecgroup == nullptr) {
-            status = false;
-        } else {
-            int set_group_status = EC_KEY_set_group(eckey, ecgroup);
-            const int set_group_success = 1;
-            if (set_group_success != set_group_status) {
-                status = false;
-            } else {
-                BIGNUM *private_bn = nullptr;
-                BN_bin2bn(private_key.data(), private_key.size(), private_bn);
-                EC_KEY_set_private_key(eckey, private_bn);
-
-                signature.resize(ECDSA_size(eckey));
-                unsigned int len;
-                int result = ECDSA_sign(0, md, SHA256_DIGEST_LENGTH, signature.data(), &len, eckey);
-                signature_size = static_cast<uint16_t>(len);
-                if(signature_size == 0) {
-                    status = false;
-                } else {
-                    signature.resize(signature_size);
-                }
-                BN_free(private_bn);
-            }
-        }
-        EC_GROUP_free(ecgroup);
     }
-    EC_KEY_free(eckey);
 
-    return status;
+    byte_vector_t buffer(sizeof(uint16_t) + data_size);
+    byte_ptr ptr = buffer.data();
+    uint16_t* data_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    *data_size_ptr = data_size;
+    ptr += sizeof(uint16_t);
+    std::memcpy(ptr, data.data(), data_size);
+    ptr += data_size;
 
-    return true;
+    bool is_valid = verify_signature(buffer.data(), buffer.size(), public_key, signature);
+
+    return is_valid;
 }
 
-bool transaction_t::verify_data() const {
-    return true;
-}
-
-bool transaction_t::verify_signature() const {
-    byte_vector_t v = serialize();
-
-    SHA256_CTX context;
-    if(!SHA256_Init(&context))
-        return false;
-
-    if(!SHA256_Update(&context, v.data(), 4+data_size))
-        return false;
-
-    byte_t md[SHA256_DIGEST_LENGTH];
-    if(!SHA256_Final(md, &context))
-        return false;
-
-    bool status = true;
-    
-    EC_KEY *eckey = EC_KEY_new();
-    if (eckey == nullptr) {
-        status = false;
-    } else {
-        EC_GROUP *ecgroup = EC_GROUP_new_by_curve_name(NID_secp256k1);
-        if (ecgroup == nullptr) {
-            status = false;
-        } else {
-            int set_group_status = EC_KEY_set_group(eckey, ecgroup);
-            const int set_group_success = 1;
-            if (set_group_success != set_group_status) {
-                status = false;
-            } else {
-                BIGNUM *private_bn = nullptr;
-                BN_bin2bn(private_key.data(), private_key.size(), private_bn);
-                EC_KEY_set_private_key(eckey, private_bn);
-
-                int verify_status = ECDSA_verify(0, md, SHA256_DIGEST_LENGTH, signature.data(), signature.size(), eckey);
-                const int verify_success = 1;
-                if (verify_success != verify_status)
-                    status = false;
-
-                BN_free(private_bn);
-            }
-        }
-        EC_GROUP_free(ecgroup);
-    }
-    EC_KEY_free(eckey);
-
-    return status;
-}
-
-byte_vector_t transaction_t::serialize() const {
+byte_vector_t transaction_t::serialize() const
+{
     byte_vector_t v;
-    v.resize(size);
+    v.resize(get_size());
+    byte_ptr ptr = v.data();
 
-    byte_t *begin = &v[0];
-    byte_t *data_begin = &v[2+2];
-    byte_t *signature_begin = &v[2+2+data.size()+2];
-    byte_t *private_key_begin = &v[2+2+data.size()+2+signature.size()+2];
+    uint16_t* data_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    *data_size_ptr = data_size;
+    ptr += sizeof(uint16_t);
+    std::memcpy(ptr, data.data(), data_size);
+    ptr += data_size;
 
-    uint16_t *ptr = reinterpret_cast<uint16_t*>(begin);
-    *ptr = size;
+    uint16_t* public_key_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    *public_key_size_ptr = public_key_size;
+    ptr += sizeof(uint16_t);
+    std::memcpy(ptr, public_key.data(), public_key_size);
+    ptr += public_key_size;
 
-    ptr = reinterpret_cast<uint16_t*>(data_begin-2);
-    *ptr = data_size;
-    std::memcpy(data_begin, data.data(), data.size());
-
-    ptr = reinterpret_cast<uint16_t*>(signature_begin-2);
-    *ptr = signature_size;
-    std::memcpy(signature_begin, signature.data(), signature.size());
-
-    ptr = reinterpret_cast<uint16_t*>(private_key_begin-2);
-    *ptr = private_key_size;
-    std::memcpy(private_key_begin, private_key.data(), private_key.size());
+    uint16_t* signature_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    *signature_size_ptr = signature_size;
+    ptr += sizeof(uint16_t);
+    std::memcpy(ptr, signature.data(), signature_size);
+    ptr += signature_size;
 
     return v;
 }
 
-bool transaction_t::deserialize(byte_vector_t v) {
-    byte_t *begin = &v[0];
-    uint16_t *ptr = reinterpret_cast<uint16_t*>(begin);
-    size = *ptr;
-
-    byte_t *data_begin = &v[2+2];
-    ptr = reinterpret_cast<uint16_t*>(data_begin-2);
-    data_size = *ptr;
+bool transaction_t::deserialize(byte_ptr ptr)
+{
+    uint16_t* data_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    data_size = *data_size_ptr;
+    ptr += sizeof(uint16_t);    
     data.resize(data_size);
-    std::memcpy(data.data(), data_begin, data_size);
+    std::memcpy(data.data(), ptr, data_size);
+    ptr += data_size;
 
-    byte_t *signature_begin = &v[2+2+data.size()+2];
-    ptr = reinterpret_cast<uint16_t*>(signature_begin-2);
-    signature_size = *ptr;
-    signature.resize(signature_size);
-    std::memcpy(signature.data(), signature_begin, signature_size);
+    uint16_t* public_key_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    public_key_size = *public_key_size_ptr;
+    ptr += sizeof(uint16_t);    
+    data.resize(public_key_size);
+    std::memcpy(public_key.data(), ptr, public_key_size);
+    ptr += public_key_size;
 
-    byte_t *private_key_begin = &v[2+2+data.size()+2+signature.size()+2];
-    ptr = reinterpret_cast<uint16_t*>(private_key_begin-2);
-    private_key_size = *ptr;
-    private_key.resize(private_key_size);
-    std::memcpy(private_key.data(), private_key_begin, private_key_size);
+    uint16_t* signature_size_ptr = reinterpret_cast<uint16_t*>(ptr);
+    signature_size = *signature_size_ptr;
+    ptr += sizeof(uint16_t);    
+    data.resize(signature_size);
+    std::memcpy(signature.data(), ptr, signature_size);
+    ptr += signature_size;
+
+    transaction_hash = get_hash(ptr, get_size());
 
     return true;
+}
+
+bool transaction_t::verify_data() const
+{
+    return true;
+}
+
+uint16_t transaction_t::get_size() const
+{
+    return sizeof(uint16_t) + data_size + sizeof(uint16_t) + public_key_size + sizeof(uint16_t) + signature_size;
 }

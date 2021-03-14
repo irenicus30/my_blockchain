@@ -2,32 +2,35 @@
 
 #include <map>
 #include <unordered_set>
-#include <mutex>
-#include <chrono>
-#include <random>
-#include <limits>
 
 #include "blockchain.h"
 #include "block.h"
 #include "loader.h"
 #include "peer.h"
+#include "peer_session.h"
 #include "message.h"
+#include "message_queue.h"
 
 
-struct chain_t {
-    static chain_t& get_instance() {
-        static chain_t instance;
-        return instance;
-    }
+class chain_t
+{
+    enum { blocks_to_sync = 60 };
 
-    
-    std::map<byte_vector_t, block_ptr> blocks;
+    public:
+        static chain_t& get_instance()
+        {
+            static chain_t instance;
+            return instance;
+        }
 
-    std::unordered_set<block_ptr> fork_heads;
-    block_ptr head = nullptr;
-    peer_ptr peer;
+        
+        std::map<byte_vector_t, block_ptr> blocks;
 
-    void run(loader_t& loader, peer_ptr ptr);
+        std::unordered_set<block_ptr> fork_heads;
+        block_ptr head = nullptr;
+        peer_ptr peer;
+
+        void run(loader_t& loader, peer_ptr ptr);
 
     private:
         chain_t() {};
@@ -37,11 +40,13 @@ struct chain_t {
 
         bool add_block(block_ptr block);
 
+        bool sync(peer_session_ptr peer_session);
+
         bool cleanup_forks(block_ptr block);
 
         int broadcast_block(block_ptr block);
 
         block_ptr mine(std::chrono::milliseconds millis);
 
-
+        miner_t miner;
 };

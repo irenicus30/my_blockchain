@@ -11,6 +11,7 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 find_package(Boost COMPONENTS program_options log log_setup REQUIRED )
 include_directories( ${Boost_INCLUDE_DIR} )
+include_directories( "crypto")
 
 set(SOURCE_FILES main.cpp loader.cpp block.cpp transaction.cpp chain.cpp blockchain.cpp peer.cpp peer_session.cpp message.cpp)
 

@@ -5,7 +5,7 @@
 
 
 loader_t::loader_t(std::string config_file_name/* = "" */) {
-    BOOST_LOG_TRIVIAL(error) <<  "loading config from file " << config_file_name;
+    BOOST_LOG_TRIVIAL(trace) <<  "loading config from file " << config_file_name;
     if(!config_file_name.empty()) {
         std::ifstream is_file(config_file_name, std::ifstream::in);
 
@@ -23,7 +23,7 @@ loader_t::loader_t(std::string config_file_name/* = "" */) {
             }
         }
     }
-    BOOST_LOG_TRIVIAL(error) <<  *this;
+    BOOST_LOG_TRIVIAL(trace) <<  *this;
 }
 
 
