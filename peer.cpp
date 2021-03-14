@@ -33,11 +33,14 @@ void peer_t::connect() {
 }
 
 void peer_t::do_accept() {
+    auto self(shared_from_this());
     acceptor.async_accept(
-        [this](boost::system::error_code ec, tcp::socket socket)
+        [this, self](boost::system::error_code ec, tcp::socket socket)
         {
-            BOOST_LOG_TRIVIAL(trace) <<  "accepting connection from " << socket.remote_endpoint.address.to_string() << " "
-                << socket.remote_endpoint.port << (ec) ? " success" : " fail";
+            boost::system::error_code ec2;
+            boost::asio::ip::tcp::endpoint endpoint = socket.remote_endpoint(ec2);
+            BOOST_LOG_TRIVIAL(trace) <<  "accepting connection from " << endpoint.address().to_string() << " "
+                << endpoint.port() << ((ec) ? " success" : " fail");
             if (!ec)
             {
                 peer_session_ptr peer_session = std::make_shared<peer_session_t>(std::move(socket));
@@ -50,14 +53,15 @@ void peer_t::do_accept() {
 
 int peer_t::broadcast_block(block_ptr block) {
     for(auto& session : sessions) {
-        if(session.finished)
+        if(session->finished)
         {
             sessions.erase(session);
         }
         else
         {
-            output_message_ptr = std::make_unique<output_message_t>(block_ptr);
-            session->send(message);
+            output_message_ptr message = std::make_shared<output_message_t>(block);
+            BOOST_LOG_TRIVIAL(trace) <<  "send to peer";
+            session->send(std::move(message));
         }
     }
     return sessions.size();

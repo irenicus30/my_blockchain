@@ -1,3 +1,5 @@
+#pragma once
+
 #include "blockchain.h"
 
 #include <chrono>
@@ -14,6 +16,6 @@ class miner_t
         block_ptr mine();
         block_ptr mine(std::chrono::milliseconds millis);
 
-        std::chrono::milliseconds mining_time {1000ms};
-        hash_t difficulty {0, 0, 0, 255};
-}
+        std::chrono::milliseconds mining_time {1000};
+        hash_t difficulty = {0, 0, 0, 255};
+};

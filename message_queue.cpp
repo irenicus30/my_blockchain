@@ -1,11 +1,11 @@
 #include "message_queue.h"
 
 
-void message_queue_t::add_message(input_message_ptr)
+void message_queue_t::add_message(input_message_ptr&& message)
 {
     std::lock_guard<std::recursive_mutex> lock(input_message_mutex);
     
-    messages[end] = input_message_ptr;
+    messages[end] = std::move(message);
     end++;
     end %= chunk;
 
@@ -32,11 +32,11 @@ input_message_ptr message_queue_t::get_message()
     {
         return nullptr;
     }
-    input_message_ptr message = messages[begin];
+    input_message_ptr message = std::move(messages[begin]);
     begin++;
     begin %= chunk;
 
-    return begin;
+    return message;
 }
 
 
@@ -45,7 +45,7 @@ void message_queue_t::increase_size()
     std::vector<input_message_ptr> new_messages(2 * messages.size());
     int idx = 0;
     do {
-        new_messages[idx] = messages[begin];
+        new_messages[idx] = std::move(messages[begin]);
         idx++;
         begin++;
         if(begin == messages.size())
@@ -61,7 +61,7 @@ void message_queue_t::decrease_size()
     std::vector<input_message_ptr> new_messages(messages.size() / 2);
     int idx = 0;
     do {
-        new_messages[idx] = messages[begin];
+        new_messages[idx] = std::move(messages[begin]);
         idx++;
         begin++;
         if(begin == messages.size())

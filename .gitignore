@@ -8,4 +8,5 @@ blockchain
 *sw[a-p]
 *\.o
 node
+backtrace.dump
 

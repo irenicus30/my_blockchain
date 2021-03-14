@@ -4,7 +4,7 @@ bool input_message_t::parse_header()
 {    
     uint32_t* body_length_ptr = reinterpret_cast<uint32_t*>(buffer.data());
     body_length = *body_length_ptr;
-    message_type* type_ptr = reinterpret_cast<uint32_t*>(buffer.data() + sizeof(message_type));
+    message_type* type_ptr = reinterpret_cast<message_type*>(buffer.data() + sizeof(message_type));
     type = *type_ptr;
 
     if(body_length > max_body_length)
@@ -27,7 +27,7 @@ block_ptr input_message_t::get_single_block()
     body_length = *body_length_ptr;
     ptr += sizeof(uint32_t);
 
-    message_type* type_ptr = reinterpret_cast<uint32_t*>(ptr);
+    message_type* type_ptr = reinterpret_cast<message_type*>(ptr);
     type = *type_ptr;
     ptr += sizeof(message_type);
 
@@ -39,18 +39,8 @@ block_ptr input_message_t::get_single_block()
 
     block_ptr block = std::make_shared<block_t>();
     body = ptr;
-    block.deserialize(body);
+    block->deserialize(body);
     return block;
-}
-
-int input_message_t::get_single_block()
-{
-    if(type != message_type::history)
-    {
-        BOOST_LOG_TRIVIAL(error) <<  "message is not message_type::history";
-        return 0;
-    }
-    return 0;
 }
 
 output_message_t::output_message_t(block_ptr block)
@@ -70,7 +60,7 @@ output_message_t::output_message_t(block_ptr block)
     *type_ptr = type;
     ptr += sizeof(message_type);
 
-    std::memcpy(ptr, serialized.data(), body_size);
+    std::memcpy(ptr, serialized.data(), body_length);
 }
 
 

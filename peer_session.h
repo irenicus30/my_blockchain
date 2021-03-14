@@ -24,13 +24,13 @@ class peer_session_t : public std::enable_shared_from_this<peer_session_t> {
 
         void start();
         void do_connect(const tcp::resolver::results_type& endpoints);
-        void send(message_ptr message);
+        void send(output_message_ptr&& message);
         void request_sync(int sync_root);
     
     private:    
         tcp::socket socket;
         void do_read_header();
-        void do_read_body(message_ptr message);
+        void do_read_body(input_message_ptr&& message);
 
         bool finished = false;
 

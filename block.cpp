@@ -9,7 +9,7 @@ bool block_t::add_hash()
     return true;
 }
 
-bool block_t::verify() const
+bool block_t::verify()
 {
     byte_vector_t v = serialize();
     bool result = verify_hash(v.data(), v.size() - sizeof(hash_t), this_block_hash);
@@ -24,7 +24,7 @@ byte_vector_t block_t::serialize() const
     byte_ptr ptr = v.data();
 
     uint64_t* nounce_ptr = reinterpret_cast<uint64_t*>(ptr);
-    *ptr64 = nounce;
+    *nounce_ptr = nounce;
     ptr += sizeof(uint64_t);
 
     uint32_t* this_block_number_ptr = reinterpret_cast<uint32_t*>(ptr);
@@ -53,18 +53,18 @@ byte_vector_t block_t::serialize() const
 bool block_t::deserialize(byte_ptr ptr)
 {
     uint64_t* nounce_ptr = reinterpret_cast<uint64_t*>(ptr);
-    nounce = *ptr64;
+    nounce = *nounce_ptr;
     ptr += sizeof(uint64_t);
 
     uint32_t* this_block_number_ptr = reinterpret_cast<uint32_t*>(ptr);
     this_block_number = *this_block_number_ptr;
     ptr += sizeof(uint32_t);
 
-    uint32_t* transactions_size_ptr = reinterpret_cast<uint32_t*>(ptr);
-    transactions_size = *transactions_size_ptr;
+    uint32_t* transactions_number_ptr = reinterpret_cast<uint32_t*>(ptr);
+    transactions_number = *transactions_number_ptr;
     ptr += sizeof(uint32_t);
 
-    for(int i = 0; i < transactions_size; i++)
+    for(int i = 0; i < transactions_number; i++)
     {
         transaction_t t;
         t.deserialize(ptr);
@@ -83,7 +83,7 @@ bool block_t::deserialize(byte_ptr ptr)
 
 uint32_t block_t::get_size() const
 {
-    return sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t) + transactions_size + sizeof(hash_t) + sizeof(hash_t);
+    return sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t) + transactions_number + sizeof(hash_t) + sizeof(hash_t);
 }
 
 bool block_t::is_enough_zeros_in_hash(hash_t& difficulty)

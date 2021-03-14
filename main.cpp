@@ -1,25 +1,50 @@
-
-
+#include <signal.h>
 #include <boost/program_options.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
+#define BOOST_STACKTRACE_USE_ADDR2LINE
+#include <boost/stacktrace.hpp>
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <iomanip>
 #include <exception>
 #include <thread>
 #include <functional>
+#include <fstream>
 
 #include "blockchain.h"
 #include "loader.h"
 #include "chain.h"
 
+
 namespace po = boost::program_options;
 using boost::asio::ip::tcp;
 
+void my_signal_handler(int signum)
+{
+    ::signal(signum, SIG_DFL);
+    boost::stacktrace::safe_dump_to("./backtrace.dump");
+    std::cout << boost::stacktrace::stacktrace() << std::endl;
+    ::raise(SIGABRT);
+}
+
 int main(int argc, char* argv[])
 {
+    if (boost::filesystem::exists("./backtrace.dump"))
+    {
+        // there is a backtrace
+        std::ifstream ifs("./backtrace.dump");
+
+        boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump(ifs);
+        std::cout << "Previous run crashed:\n" << st << std::endl;
+
+        // cleaning up
+        ifs.close();
+        boost::filesystem::remove("./backtrace.dump");
+    }
+
     try
     {
         std::string config_file_name;
@@ -51,6 +76,8 @@ int main(int argc, char* argv[])
         boost::asio::io_context io_context(1);
         //boost::asio::signal_set signals(io_context, SIGINT, SIGTERM);
         //signals.async_wait([&](auto, auto){ io_context.stop(); });
+        ::signal(SIGSEGV, &my_signal_handler);
+        ::signal(SIGABRT, &my_signal_handler);
 
         tcp::endpoint endpoint(tcp::v4(), std::atoi(loader.p2p_port.c_str()));
         peer_ptr ptr = std::make_shared<peer_t>(io_context, endpoint, loader);

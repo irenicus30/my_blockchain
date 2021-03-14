@@ -1,5 +1,8 @@
 #pragma once
 
+#include <openssl/sha.h>
+#include <openssl/ec.h>
+
 #include <boost/log/trivial.hpp>
 
 #include <cstring>
@@ -17,12 +20,11 @@
 
 #include "config.h"
 
+
 typedef unsigned char byte_t;
 typedef byte_t* byte_ptr;
 typedef std::vector<byte_t> byte_vector_t;
 
-std::string to_string(const byte_vector_t& bytes);
+typedef std::array<byte_t, SHA256_DIGEST_LENGTH> hash_t;
 
-class peer_t;
-typedef std::shared_ptr<peer_t> peer_ptr;
-
+std::string to_string(const hash_t& bytes);

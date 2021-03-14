@@ -20,8 +20,8 @@ struct transaction_t
     hash_t transaction_hash;
 
     // add only in wallet
-    bool add_signature(byte_vector_t& key);
-    bool verify() const;
+    bool add_signature(byte_vector_t& private_key, byte_vector_t& public_key);
+    bool verify();
 
     byte_vector_t serialize() const;
     bool deserialize(byte_ptr);

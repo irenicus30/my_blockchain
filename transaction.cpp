@@ -20,7 +20,7 @@ bool transaction_t::add_signature(byte_vector_t& private_key, byte_vector_t& pub
     return (signature_size != 0);
 }
 
-bool transaction_t::verify() const
+bool transaction_t::verify()
 {
     if(!verify_data())
     {

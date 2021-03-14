@@ -22,7 +22,7 @@ struct block_t
     block_ptr prev = nullptr;
 
     bool add_hash();
-    bool verify() const;
+    bool verify();
 
     byte_vector_t serialize() const;
     bool deserialize(byte_ptr);

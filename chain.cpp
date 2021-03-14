@@ -1,5 +1,7 @@
 #include "chain.h"
 
+#include "miner.h"
+
 bool chain_t::add_block(block_ptr block)
 {    
     auto it_this = blocks.find(block->this_block_hash);
@@ -22,13 +24,20 @@ bool chain_t::add_block(block_ptr block)
         return false;
     }
 
-    auto result = blocks.insert(std::pair<byte_vector_t, block_ptr>(block->this_block_hash, block));
+    auto result = blocks.insert(std::pair<hash_t, block_ptr>(block->this_block_hash, block));
     if(!result.second)
     {
         return false;
     }
     BOOST_LOG_TRIVIAL(trace) << "inserting block";
-    block->prev = it_prev->second;
+    if(it_prev != blocks.end())
+    {
+        block->prev = it_prev->second;
+    }
+    else
+    {
+        block->prev = nullptr;
+    }
     fork_heads.erase(block->prev);
     fork_heads.insert(block);
 
@@ -37,7 +46,9 @@ bool chain_t::add_block(block_ptr block)
         head = block;        
     }
 
-    peer->broadcast_block(block);
+    BOOST_LOG_TRIVIAL(trace) << "broadcasting block";
+    int count = peer->broadcast_block(block);
+    BOOST_LOG_TRIVIAL(trace) << "block broadcasted to " << count << " peers";
 
     return true;
 }
@@ -56,7 +67,8 @@ void chain_t::run(loader_t& loader, peer_ptr ptr)
     while(true) {
 
         while(true) {
-            message_ptr message = peer->receive_message();
+            message_queue_t& instance = message_queue_t::get_instance();
+            input_message_ptr message = instance.get_message();
             if(message == nullptr)
             {
                 break;
@@ -66,6 +78,7 @@ void chain_t::run(loader_t& loader, peer_ptr ptr)
             {
                 continue;
             }
+            BOOST_LOG_TRIVIAL(trace) <<  "received block";
             int result = add_block(block);
             if(result == false)
             {
@@ -97,8 +110,8 @@ bool chain_t::sync(peer_session_ptr peer_session)
     return true;
 }
 
-block_ptr chain_t::mine(std::chrono::milliseconds millis)
+block_ptr chain_t::mine()
 {
-    block_ptr = miner.mine(millis);
-    return block_ptr;
+    block_ptr block = miner.mine();
+    return block;
 }

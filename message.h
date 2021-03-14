@@ -54,5 +54,5 @@ struct output_message_t
     bool broadcast = false;
 };
 
-typedef std::unique_ptr<input_message_t> input_message_ptr;
-typedef std::unique_ptr<output_message_t> output_message_ptr;
+typedef std::shared_ptr<input_message_t> input_message_ptr;
+typedef std::shared_ptr<output_message_t> output_message_ptr;

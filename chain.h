@@ -10,7 +10,7 @@
 #include "peer_session.h"
 #include "message.h"
 #include "message_queue.h"
-
+#include "miner.h"
 
 class chain_t
 {
@@ -24,7 +24,7 @@ class chain_t
         }
 
         
-        std::map<byte_vector_t, block_ptr> blocks;
+        std::map<hash_t, block_ptr> blocks;
 
         std::unordered_set<block_ptr> fork_heads;
         block_ptr head = nullptr;
@@ -46,7 +46,7 @@ class chain_t
 
         int broadcast_block(block_ptr block);
 
-        block_ptr mine(std::chrono::milliseconds millis);
+        block_ptr mine();
 
         miner_t miner;
 };
