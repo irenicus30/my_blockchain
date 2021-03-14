@@ -6,8 +6,8 @@
 #include "blockchain.h"
 #include "block.h"
 #include "loader.h"
-#include "peer.h"
-#include "peer_session.h"
+#include "server.h"
+#include "connection.h"
 #include "message.h"
 #include "message_queue.h"
 #include "miner.h"
@@ -28,9 +28,9 @@ class chain_t
 
         std::unordered_set<block_ptr> fork_heads;
         block_ptr head = nullptr;
-        peer_ptr peer;
+        server_ptr server;
 
-        void run(loader_t& loader, peer_ptr ptr);
+        void run(loader_t& loader, server_ptr ptr);
 
     private:
         chain_t() {};
@@ -40,7 +40,7 @@ class chain_t
 
         bool add_block(block_ptr block);
 
-        bool sync(peer_session_ptr peer_session);
+        bool sync(connection_ptr connection);
 
         bool cleanup_forks(block_ptr block);
 

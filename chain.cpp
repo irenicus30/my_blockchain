@@ -47,7 +47,7 @@ bool chain_t::add_block(block_ptr block)
     }
 
     BOOST_LOG_TRIVIAL(trace) << "broadcasting block";
-    int count = peer->broadcast_block(block);
+    int count = server->broadcast_block(block);
     BOOST_LOG_TRIVIAL(trace) << "block broadcasted to " << count << " peers";
 
     return true;
@@ -59,9 +59,9 @@ bool chain_t::cleanup_forks(block_ptr block)
 }
 
 
-void chain_t::run(loader_t& loader, peer_ptr ptr)
+void chain_t::run(loader_t& loader, server_ptr ser)
 {
-    peer = ptr;
+    server = ptr;
 
     // main loop
     while(true) {
@@ -84,7 +84,7 @@ void chain_t::run(loader_t& loader, peer_ptr ptr)
             {
                 if(head==nullptr || block->this_block_number > head->this_block_number)
                 {
-                    sync(message->peer_session);
+                    sync(message->connection);
                 }
             }
         }
@@ -101,12 +101,12 @@ void chain_t::run(loader_t& loader, peer_ptr ptr)
 }
 
 
-bool chain_t::sync(peer_session_ptr peer_session)
+bool chain_t::sync(connection_ptr connection)
 {
     int sync_root = 0;
     if(head != nullptr)
         sync_root = head->this_block_number - blocks_to_sync;
-    peer_session->request_sync(sync_root);
+    connection->request_sync(sync_root);
     return true;
 }
 

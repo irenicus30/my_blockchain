@@ -80,13 +80,13 @@ int main(int argc, char* argv[])
         ::signal(SIGABRT, &my_signal_handler);
 
         tcp::endpoint endpoint(tcp::v4(), std::atoi(loader.p2p_port.c_str()));
-        peer_ptr ptr = std::make_shared<peer_t>(io_context, endpoint, loader);
-        ptr->setup();
+        server_ptr server = std::make_shared<server_t>(io_context, endpoint, loader);
+        server->setup();
         
         std::thread t([&io_context](){ io_context.run(); });
 
         chain_t& instance = chain_t::get_instance();
-        instance.run(loader, ptr);
+        instance.run(loader, server);
 
         io_context.stop();
         t.join();

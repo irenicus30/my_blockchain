@@ -12,28 +12,30 @@
 #include "blockchain.h"
 #include "message.h"
 #include "loader.h"
-#include "peer_session.h"
+#include "connection.h"
 
 using boost::asio::ip::tcp;
 
-class peer_t : public std::enable_shared_from_this<peer_t> {
+class server_t : public std::enable_shared_from_this<server_t> {
 
     public:
-        peer_t(boost::asio::io_context& io_context, const tcp::endpoint& endpoint, loader_t& loader);
-        peer_t(peer_t&) = delete;
-        peer_t& operator=(peer_t&) = delete;
+        server_t(boost::asio::io_context& io_context, const tcp::endpoint& endpoint, loader_t& loader);
+        server_t(server_t&) = delete;
+        server_t& operator=(server_t&) = delete;
         void setup();
 
         int broadcast_block(block_ptr block);
         input_message_ptr receive_message();
 
         loader_t& loader;
-        std::unordered_set<peer_session_ptr> sessions;
+        std::unordered_set<connection_ptr> connections;
     
     private:
 
-        void connect();
+        void connect_known_peers();
         void do_accept();
+
+        connection_ptr create_connection();
 
         tcp::acceptor acceptor;
         boost::asio::io_context& io_context;
